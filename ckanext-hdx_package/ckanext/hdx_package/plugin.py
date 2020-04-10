@@ -320,6 +320,22 @@ class HDXPackagePlugin(plugins.SingletonPlugin, tk.DefaultDatasetForm):
                     tk.get_validator('hdx_delete_unless_allow_broken_link'),
                     tk.get_validator('ignore_missing'),
                     tk.get_validator('hdx_boolean_string_converter')
+                ],
+                'date_start_for_data': [
+                    tk.get_validator('ignore_missing'),
+                    tk.get_validator('isodate'),
+                    tk.get_validator('hdx_isodate_to_string_converter')
+                ],
+                'date_end_for_data': [
+                    tk.get_validator('ignore_missing'),
+                    tk.get_validator('isodate'),
+                    tk.get_validator('hdx_isodate_to_string_converter'),
+                    tk.get_validator('hdx_greater_than')
+                ],
+                'special_end_for_data': [
+                    tk.get_validator('ignore_missing'),
+                    tk.get_validator('hdx_in_special_date_values'),
+                    tk.get_validator('hdx_empty_if_date_end_for_data_populated')
                 ]
             }
         )
@@ -404,6 +420,15 @@ class HDXPackagePlugin(plugins.SingletonPlugin, tk.DefaultDatasetForm):
                 'broken_link': [
                     tk.get_validator('ignore_missing'),
                     tk.get_validator('boolean_validator')
+                ],
+                'date_start_for_data': [
+                    tk.get_validator('ignore_missing'),
+                ],
+                'date_end_for_data': [
+                    tk.get_validator('ignore_missing'),
+                ],
+                'special_end_for_data': [
+                    tk.get_validator('ignore_missing'),
                 ],
             }
         )
@@ -496,7 +521,11 @@ class HDXPackagePlugin(plugins.SingletonPlugin, tk.DefaultDatasetForm):
             'hdx_delete_unless_authorized_to_update_cod':
                 vd.hdx_delete_unless_authorized_wrapper('hdx_cod_update'),
             'hdx_in_cod_values':
-                vd.hdx_value_in_list_wrapper(COD_VALUES_MAP.keys(), False)
+                vd.hdx_value_in_list_wrapper(COD_VALUES_MAP.keys(), False),
+            'hdx_in_special_date_values':
+                vd.hdx_value_in_list_wrapper(['NOW'], False),
+            'hdx_greater_than': vd.hdx_greater_than,
+            'hdx_empty_if_date_end_for_data_populated': vd.hdx_not_both_populated_wrapper('date_end_for_data')
         }
 
     def get_auth_functions(self):

@@ -7,6 +7,7 @@ Created on Apr 11, 2014
 import bisect
 import re
 import datetime
+import dateutil.parser as dateutil_parser
 import logging
 
 import ckan.model as model
@@ -340,11 +341,29 @@ def hdx_assume_missing_is_true(value, context):
     return value
 
 
-
 def hdx_isodate_to_string_converter(value, context):
     if isinstance(value, datetime.datetime):
         return value.isoformat()
     return None
+
+
+def hdx_greater_than(key, data, errors, context):
+    key_in_resource = key[-1]
+    start_key = key[:-1] + (key_in_resource.replace('end', 'start'),)
+    start_date = __get_date_from_data_dict(start_key, data)
+    end_date = __get_date_from_data_dict(key, data)
+    if start_date and end_date and start_date >= end_date:
+        raise Invalid(_('End date needs to be after start date'))
+
+
+def __get_date_from_data_dict(key, data_dict):
+    str_value = data_dict.get(key)
+    try:
+        date = dateutil_parser.parse(str_value)
+        return date
+    except Exception as e:
+        return None
+
 
 
 def reset_on_file_upload(key, data, errors, context):
@@ -482,6 +501,18 @@ def hdx_value_in_list_wrapper(allowed_values, allow_missing):
             raise Invalid(_('Value not in allowed list'))
 
     return hdx_value_in_list
+
+
+def hdx_not_both_populated_wrapper(other_key):
+
+    def hdx_not_both_populated(key, data, errors, context):
+        value = data.get(key)
+        other_value = data.get(key[:-1] + (other_key,))
+
+        if value and value is not missing and other_value and other_value is not missing:
+            raise Invalid(_('This field cannot be filled at the same time as {}'.format(other_key)))
+
+    return hdx_not_both_populated
 
 
 def __get_previous_resource_dict(context, package_id, resource_id):
